@@ -32,18 +32,36 @@ def main():
     
     service = build('drive', 'v3', credentials=creds)
 
-    results = service.files().list(
-        pageSize=10, fields="nextPageToken, files(id, name)").execute()
-    items = results.get('files', [])
-
-    if not items:
-        print('No files found.')
-    else:
-        print('Files:')
-        for item in items:
-            print(u'{0} ({1})'.format(item['name'], item['id']))
+    folder_ids = []
+    root = []
+    page_token = None
+    while True:
+        folders = service.files().list(q="mimeType='application/vnd.google-apps.folder' and name='Processed'",
+                                        spaces='drive',
+                                        fields='nextPageToken, files(id, name)',
+                                        pageToken=page_token).execute()
+        for folder in folders.get('files', []):
             
+            folder_ids.append(folder.get('id'))
+        page_token = folders.get('nextPageToken', None)
+        if page_token is None: 
+            break
 
+    for id in folder_ids:
+        file = service.files().get(fileId=id, fields='id, name, parents').execute()
+        parent = file.get('parents')
+        if parent:
+            tree = []
+            while True:             
+                folder = service.files().get(fileId=parent[0], fields='name, id, parents').execute()
+                parent = folder.get('parents')
+                if parent is None:
+                    break
+                tree.append({'id': parent[0], 'name': folder.get('name')})
+        root.append(tree)
+        
+            
+    print(root)
 
 
 
