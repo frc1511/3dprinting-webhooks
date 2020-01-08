@@ -5,6 +5,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 import requests
 import json
+import datetime
 
 SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
 
@@ -47,22 +48,26 @@ def main():
         if page_token is None: 
             break
 
-    for id in folder_ids:
-        file = service.files().get(fileId=id, fields='id, name, parents').execute()
+    current_year = None
+    for idx, i in enumerate(folder_ids):
+        file = service.files().get(fileId=i, fields='id, name, parents').execute()
+        if str(datetime.date.today().year) in str(file['name']):
+            print('yeet')
         parent = file.get('parents')
         if parent:
             tree = []
             while True:             
                 folder = service.files().get(fileId=parent[0], fields='name, id, parents').execute()
                 parent = folder.get('parents')
+                if str(datetime.date.today().year) in str(folder['name']):
+                    current_year = [folder['id'], idx] # [id of parent folder, id of appropriate 'processed' folder]
                 if parent is None:
                     break
                 tree.append({'id': parent[0], 'name': folder.get('name')})
         root.append(tree)
         
-            
-    print(root)
-
+    current_unprocessed_parent = service.files().get(fileId=folder_ids[current_year[1]], fields='name, id, parents').execute().get('parents')[0]
+    print(current_unprocessed_parent)
 
 
 
