@@ -25,8 +25,7 @@ def main():
         if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials.json', SCOPES)
+            flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
             creds = flow.run_local_server(port=0)
         with open('token.pickle', 'wb') as token:
             pickle.dump(creds, token)
@@ -52,7 +51,6 @@ def main():
     for idx, i in enumerate(folder_ids):
         file = service.files().get(fileId=i, fields='id, name, parents').execute()
         if str(datetime.date.today().year) in str(file['name']):
-            print('yeet')
         parent = file.get('parents')
         if parent:
             tree = []
@@ -69,8 +67,22 @@ def main():
     current_unprocessed_parent = service.files().get(fileId=folder_ids[current_year[1]], fields='name, id, parents').execute().get('parents')[0]
     print(current_unprocessed_parent)
 
-
-
+    page_token = None
+    unprocessed_files = {}
+    error_files = {}
+    while True:
+        unprocessed = service.files().list(q="'%s' in parents" %current_unprocessed_parent,
+                                            spaces='drive', 
+                                            fields='nextPageToken, files(id, name)',
+                                            pageToken=page_token).execute()
+        for file in unprocessed.get('files', []):
+            if ".stl" not in file.get('name'):
+                error_files["%s" %file.get('name')] = str(file.get('id'))
+            else:
+                unprocessed_files["%s" % file.get('name')] = str(file.get('id'))
+        page_token = folders.get('nextPageToken', None)
+        if page_token is None: 
+            break
 
 if __name__ == '__main__':
     main()
