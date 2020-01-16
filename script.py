@@ -6,6 +6,7 @@ from google.auth.transport.requests import Request
 import requests
 import json
 import datetime
+import re
 
 SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
 
@@ -51,7 +52,7 @@ def main():
     for idx, i in enumerate(folder_ids):
         file = service.files().get(fileId=i, fields='id, name, parents').execute()
         if str(datetime.date.today().year) in str(file['name']):
-        parent = file.get('parents')
+            parent = file.get('parents')
         if parent:
             tree = []
             while True:             
@@ -70,13 +71,14 @@ def main():
     page_token = None
     unprocessed_files = {}
     error_files = {}
+    regex = r"(S?P\d+)([ :\"'.\-\(\)a-zA-z0-9]+)\.(ipt|stl)"
     while True:
         unprocessed = service.files().list(q="'%s' in parents" %current_unprocessed_parent,
                                             spaces='drive', 
                                             fields='nextPageToken, files(id, name)',
                                             pageToken=page_token).execute()
         for file in unprocessed.get('files', []):
-            if ".stl" not in file.get('name'):
+            if ".stl" not in file.get('name'): # needs switching to regex matching
                 error_files["%s" %file.get('name')] = str(file.get('id'))
             else:
                 unprocessed_files["%s" % file.get('name')] = str(file.get('id'))
