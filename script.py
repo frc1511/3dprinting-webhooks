@@ -66,7 +66,7 @@ def main():
         root.append(tree)
         
     current_unprocessed_parent = service.files().get(fileId=folder_ids[current_year[1]], fields='name, id, parents').execute().get('parents')[0]
-    print(current_unprocessed_parent)
+    
 
     page_token = None
     unprocessed_files = {}
@@ -78,13 +78,16 @@ def main():
                                             fields='nextPageToken, files(id, name)',
                                             pageToken=page_token).execute()
         for file in unprocessed.get('files', []):
-            if ".stl" not in file.get('name'): # needs switching to regex matching
+            result = re.match(regex, file.get('name'))
+            if result.group(3) not in ['ipt, stl']:
                 error_files["%s" %file.get('name')] = str(file.get('id'))
             else:
-                unprocessed_files["%s" % file.get('name')] = str(file.get('id'))
+                unprocessed_files["%s" % result.group(1)] = str(file.get('id'))
         page_token = folders.get('nextPageToken', None)
         if page_token is None: 
             break
+
+    
 
 if __name__ == '__main__':
     main()
