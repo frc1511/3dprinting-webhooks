@@ -71,7 +71,6 @@ def get_current_parts_log(service):
 
 
 def main():
-    # requests.post(data['url'], data={'text':'hello world'})
     # folder struct: <year>/02 Build Season/<year> PARTS AND ASSEMBLY LOG
     creds = None
     if os.path.exists('token.pickle'):
